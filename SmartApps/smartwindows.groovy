@@ -1,7 +1,11 @@
 /**
  *  Smart Windows
- *
+ *	Compares two temperatures – indoor vs outdoor, for example – then sends an alert if windows are open (or closed!).
+ * 
  *  Copyright 2014 Eric Gideon
+ *
+ * 	Based in part on the When it's going to rain" SmartApps by the SmartThings team,
+ *  primarily the message throttling code.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
