@@ -4,7 +4,7 @@
  * 
  *  Copyright 2014 Eric Gideon
  *
- * 	Based in part on the When it's going to rain" SmartApps by the SmartThings team,
+ * 	Based in part on the "When it's going to rain" SmartApp by the SmartThings team,
  *  primarily the message throttling code.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -81,16 +81,16 @@ def temperatureHandler(evt) {
 		log.trace "Found ${recentEvents?.size() ?: 0} events in the last $retryPeriod minutes"
 		def alreadyNotified = recentEvents.count { it.doubleValue > currentOutTemp } > 1
 
-		log.debug "Outside is colder than the max of ${maxTemp}, and can be used to cool the house."
+		log.info "Outside is colder than the max of ${maxTemp}, and can be used to cool the house."
 		if ( alreadyNotified ) {
 			log.debug "Already notified!"
 		} else {
 			log.debug "Sending notification"
 			if( currentOutTemp <= currentInTemp && !openWindows ) {
-				send( "Open some windows - it's colder outside! Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
+				send( "Open some windows to cool down the house! Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
 			}
 			if( currentOutTemp > currentInTemp && openWindows ) {
-				send( "It's warmer outside! You should close these windows: ${openWindows.join(', ')}. Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
+				send( "It's gotten warmer outside! You should close these windows: ${openWindows.join(', ')}. Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
 			}
 		}
 	// Otherwise, check against minimum temperature
@@ -98,16 +98,16 @@ def temperatureHandler(evt) {
 		log.trace "Found ${recentEvents?.size() ?: 0} events in the last $retryPeriod minutes"
 		def alreadyNotified = recentEvents.count { it.doubleValue < currentOutTemp } > 1
 
-		log.debug "Outside is warmer than the minimum of ${minTemp}, and can be used to heat the house."
+		log.info "Outside is warmer than the minimum of ${minTemp}, and can be used to heat the house."
 		if ( alreadyNotified ) {
 			log.debug "Already notified!"
 		} else {
 			log.debug "Sending notification"
 			if( currentOutTemp > currentInTemp && !openWindows ) {
-				send( "Open some windows - it's warmer outside! Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
+				send( "Open some windows to warm up the house! Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
 			}
 			if( currentOutTemp < currentInTemp && openWindows ) {
-				send( "It's colder outside! You should close these windows: ${openWindows.join(', ')}. Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
+				send( "It's gotten colder outside! You should close these windows: ${openWindows.join(', ')}. Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
 			}
 		}
 	}
@@ -123,5 +123,5 @@ private send(msg) {
 		sendSms( phone1, msg )
 	}
 
-	log.debug msg
+	log.info msg
 }
