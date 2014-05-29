@@ -24,7 +24,7 @@ metadata {
 	tiles {
 		carouselTile("cameraDetails", "device.image", width: 3, height: 2) { }
 
-		standardTile("camera", "device.image", width: 1, height: 1, canChangeIcon: false, inactiveLabel: false, canChangeBackground: true) {
+		standardTile("camera", "device.image", width: 1, height: 1, canChangeIcon: false, inactiveLabel: true, canChangeBackground: true) {
 		  state "default", label: '', action: "Image Capture.take", icon: "st.camera.camera", backgroundColor: "#FFFFFF"
 		}
 
