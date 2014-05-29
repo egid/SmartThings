@@ -10,10 +10,10 @@
 
 preferences
 {
-	input("username",	"text",		title: "Username",	description: "Camera username")
-	input("password",	"password",	title: "Password",	description: "Camera password")
-	input("url",		"text",		title: "IP or URL",	description: "URL or IP of camera")
-	input("port",		"text",		title: "Port",		description: "Port")
+	input("username",	"text",		title: "Camera username",	description: "Username for web login")
+	input("password",	"password",	title: "Camera password",	description: "Password for web login")
+	input("url",		"text",		title: "IP or URL of camera",	description: "Do not include http://")
+	input("port",		"text",		title: "Port",			description: "Port")
 }
 
 metadata {
