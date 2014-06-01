@@ -21,7 +21,7 @@ definition(
 	name: "Smart Windows",
 	namespace: "egid",
 	author: "Eric Gideon",
-	description: "Compares two temperatures – indoor vs outdoor, for example – then sends an alert if windows are open (or closed!).",
+	description: "Compares two temperatures – indoor vs outdoor, for example – then sends an alert if windows are open (or closed!). If you don't use an external temperature device, your zipcode will be used instead.",
 	category: "My Apps",
 	iconUrl: "https://s3.amazonaws.com/smartthings-device-icons/Home/home9-icn.png",
 	iconX2Url: "https://s3.amazonaws.com/smartthings-device-icons/Home/home9-icn@2x.png"
@@ -41,7 +41,7 @@ preferences {
 		input "inTemp", "capability.temperatureMeasurement", title: "Indoor"
 	}
 	section( "Set your location" ) {
-		input "zipCode", "number", title: "Zip code"
+		input "zipCode", "text", title: "Zip code"
 	}
 	section( "Notifications" ) {
 		input "sendPushMessage", "enum", title: "Send a push notification?", metadata:[values:["Yes","No"]], required:false
@@ -66,11 +66,20 @@ def initialize() {
 }
 
 def temperatureHandler(evt) {
-	log.trace "temperature: $evt.value, $evt"
+
+	def currentOutTemp = null
+	if ( outTemp ) {
+		currentOutTemp = outTemp.latestValue("temperature")
+	} else {
+		log.debug "No external temperature device set. Checking WUnderground...."
+		currentOutTemp = weatherCheck()
+	}
 
 	def currentInTemp = evt.doubleValue
-	def currentOutTemp = outTemp.latestValue("temperature")
 	def openWindows = sensors.findAll { it?.latestValue("contact") == 'open' }
+	
+	log.trace "Temp event: $evt"
+	log.info "In: $currentInTemp; Out: $currentOutTemp"
 
 	// Don't spam notifications
 	// *TODO* use state.foo from Severe Weather Alert to do this better
@@ -116,6 +125,20 @@ def temperatureHandler(evt) {
 		}
 	}
 }
+
+def weatherCheck() {
+	def json = getWeatherFeature("conditions", zipCode)
+	def currentTemp = json?.current_observation?.temp_f
+
+	if ( currentTemp ) {
+    	log.debug "Temp: $currentTemp (WeatherUnderground)"
+		return currentTemp
+	} else {
+		log.warn "Did not get a temp: $json"
+		return false
+	}
+}
+
 private send(msg) {
 	if ( sendPushMessage != "No" ) {
 		log.debug( "sending push message" )
