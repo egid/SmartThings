@@ -23,22 +23,22 @@ definition(
 	author: "Eric Gideon",
 	description: "Compares two temperatures – indoor vs outdoor, for example – then sends an alert if windows are open (or closed!).",
 	category: "My Apps",
-	iconUrl: "https://s3.amazonaws.com/smartapp-icons/Home/home9-icn.png",
-	iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Home/home9-icn@2x.png"
+	iconUrl: "https://s3.amazonaws.com/smartthings-device-icons/Home/home9-icn.png",
+	iconX2Url: "https://s3.amazonaws.com/smartthings-device-icons/Home/home9-icn@2x.png"
 )
 
 
 preferences {
-	section( "Temperatures..." ){
-		input "maxTemp", "number", title: "Max temp:"
-		input "minTemp", "number", title: "Min temp:"
+	section( "Set the temperature range for your comfort zone..." ){
+		input "maxTemp", "number", title: "Maximum temperature"
+		input "minTemp", "number", title: "Minimum temperature"
 	}
-	section( "Windows to check..." ){
+	section( "Select windows to check..." ){
 		input "sensors", "capability.contactSensor", multiple: true
 	}
-	section( "Temperatures to monitor..." ){
-		input "outTemp", "capability.temperatureMeasurement", title: "Outdoor temperature:"
-		input "inTemp", "capability.temperatureMeasurement", title: "Indoor temperature:"
+	section( "Select devices to monitor..." ){
+		input "outTemp", "capability.temperatureMeasurement", title: "Outdoor temperature"
+		input "inTemp", "capability.temperatureMeasurement", title: "Indoor temperature"
 	}
 	section( "Notifications" ) {
 		input "sendPushMessage", "enum", title: "Send a push notification?", metadata:[values:["Yes","No"]], required:false
@@ -70,6 +70,7 @@ def temperatureHandler(evt) {
 	def openWindows = sensors.findAll { it?.latestValue("contact") == 'open' }
 
 	// Don't spam notifications
+	// *TODO* use state.foo from Severe Weather Alert to do this better
 	if (!retryPeriod) {
 		def retryPeriod = 30
 	}
