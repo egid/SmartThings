@@ -30,15 +30,15 @@ definition(
 
 preferences {
 	section( "Set the temperature range for your comfort zone..." ) {
-		input "maxTemp", "number", title: "Maximum temperature"
 		input "minTemp", "number", title: "Minimum temperature"
+		input "maxTemp", "number", title: "Maximum temperature"
 	}
 	section( "Select windows to check..." ) {
 		input "sensors", "capability.contactSensor", multiple: true
 	}
 	section( "Select temperature devices to monitor..." ) {
-		input "outTemp", "capability.temperatureMeasurement", title: "Outdoor (optional)", required: false
 		input "inTemp", "capability.temperatureMeasurement", title: "Indoor"
+		input "outTemp", "capability.temperatureMeasurement", title: "Outdoor (optional)", required: false
 	}
 	section( "Set your location" ) {
 		input "zipCode", "text", title: "Zip code"
@@ -61,12 +61,8 @@ def updated() {
 	subscribe( inTemp, "temperature", temperatureHandler )
 }
 
-def initialize() {
-	//
-}
 
 def temperatureHandler(evt) {
-
 	def currentOutTemp = null
 	if ( outTemp ) {
 		currentOutTemp = outTemp.latestValue("temperature")
@@ -88,17 +84,16 @@ def temperatureHandler(evt) {
 	}
 	def timeAgo = new Date(now() - (1000 * 60 * retryPeriod).toLong())
 	def recentEvents = inTemp.eventsSince(timeAgo)
+	log.trace "Found ${recentEvents?.size() ?: 0} events in the last $retryPeriod minutes"
 
 	// Test against maximum specified temperature
 	if ( currentInTemp > maxTemp && currentOutTemp < maxTemp ) {
-		log.trace "Found ${recentEvents?.size() ?: 0} events in the last $retryPeriod minutes"
-		def alreadyNotified = recentEvents.count { it.doubleValue > currentOutTemp } > 1
-
 		log.info "Outside is colder than the max of ${maxTemp}, and can be used to cool the house."
+
+		def alreadyNotified = recentEvents.count { it.doubleValue > currentOutTemp } > 1
 		if ( alreadyNotified ) {
-			log.debug "Already notified!"
+			log.debug "Already notified! No notifications sent."
 		} else {
-			log.debug "Sending notification"
 			if( currentOutTemp <= currentInTemp && !openWindows ) {
 				send( "Open some windows to cool down the house! Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
 			}
@@ -108,14 +103,12 @@ def temperatureHandler(evt) {
 		}
 	// Otherwise, check against minimum temperature
 	} else if ( currentInTemp < minTemp && currentOutTemp > minTemp ) {
-		log.trace "Found ${recentEvents?.size() ?: 0} events in the last $retryPeriod minutes"
-		def alreadyNotified = recentEvents.count { it.doubleValue < currentOutTemp } > 1
-
 		log.info "Outside is warmer than the minimum of ${minTemp}, and can be used to heat the house."
+		
+		def alreadyNotified = recentEvents.count { it.doubleValue < currentOutTemp } > 1
 		if ( alreadyNotified ) {
-			log.debug "Already notified!"
+			log.debug "Already notified! No notifications sent."
 		} else {
-			log.debug "Sending notification"
 			if( currentOutTemp > currentInTemp && !openWindows ) {
 				send( "Open some windows to warm up the house! Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
 			}
@@ -123,6 +116,9 @@ def temperatureHandler(evt) {
 				send( "It's gotten colder outside! You should close these windows: ${openWindows.join(', ')}. Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
 			}
 		}
+	} else {
+		log.info "In comfort zone: $currentInTemp is between $minTemp and $maxTemp."
+		log.debug "No notifications sent."
 	}
 }
 
@@ -131,7 +127,7 @@ def weatherCheck() {
 	def currentTemp = json?.current_observation?.temp_f
 
 	if ( currentTemp ) {
-    	log.debug "Temp: $currentTemp (WeatherUnderground)"
+    	log.trace "Temp: $currentTemp (WeatherUnderground)"
 		return currentTemp
 	} else {
 		log.warn "Did not get a temp: $json"
