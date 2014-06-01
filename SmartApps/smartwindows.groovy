@@ -29,16 +29,19 @@ definition(
 
 
 preferences {
-	section( "Set the temperature range for your comfort zone..." ){
+	section( "Set the temperature range for your comfort zone..." ) {
 		input "maxTemp", "number", title: "Maximum temperature"
 		input "minTemp", "number", title: "Minimum temperature"
 	}
-	section( "Select windows to check..." ){
+	section( "Select windows to check..." ) {
 		input "sensors", "capability.contactSensor", multiple: true
 	}
-	section( "Select devices to monitor..." ){
-		input "outTemp", "capability.temperatureMeasurement", title: "Outdoor temperature"
-		input "inTemp", "capability.temperatureMeasurement", title: "Indoor temperature"
+	section( "Select temperature devices to monitor..." ) {
+		input "outTemp", "capability.temperatureMeasurement", title: "Outdoor (optional)", required: false
+		input "inTemp", "capability.temperatureMeasurement", title: "Indoor"
+	}
+	section( "Set your location" ) {
+		input "zipCode", "number", title: "Zip code"
 	}
 	section( "Notifications" ) {
 		input "sendPushMessage", "enum", title: "Send a push notification?", metadata:[values:["Yes","No"]], required:false
@@ -78,7 +81,7 @@ def temperatureHandler(evt) {
 	def recentEvents = inTemp.eventsSince(timeAgo)
 
 	// Test against maximum specified temperature
-	if ( currentOutTemp < maxTemp ) {
+	if ( currentInTemp > maxTemp && currentOutTemp < maxTemp ) {
 		log.trace "Found ${recentEvents?.size() ?: 0} events in the last $retryPeriod minutes"
 		def alreadyNotified = recentEvents.count { it.doubleValue > currentOutTemp } > 1
 
@@ -95,7 +98,7 @@ def temperatureHandler(evt) {
 			}
 		}
 	// Otherwise, check against minimum temperature
-	} else if ( currentOutTemp > minTemp ) {
+	} else if ( currentInTemp < minTemp && currentOutTemp > minTemp ) {
 		log.trace "Found ${recentEvents?.size() ?: 0} events in the last $retryPeriod minutes"
 		def alreadyNotified = recentEvents.count { it.doubleValue < currentOutTemp } > 1
 
