@@ -22,7 +22,6 @@ definition(
 	namespace: "egid",
 	author: "Eric Gideon",
 	description: "Compares two temperatures – indoor vs outdoor, for example – then sends an alert if windows are open (or closed!). If you don't use an external temperature device, your zipcode will be used instead.",
-	category: "My Apps",
 	iconUrl: "https://s3.amazonaws.com/smartthings-device-icons/Home/home9-icn.png",
 	iconX2Url: "https://s3.amazonaws.com/smartthings-device-icons/Home/home9-icn@2x.png"
 )
@@ -86,39 +85,42 @@ def temperatureHandler(evt) {
 	def recentEvents = inTemp.eventsSince(timeAgo)
 	log.trace "Found ${recentEvents?.size() ?: 0} events in the last $retryPeriod minutes"
 
-	// Test against maximum specified temperature
-	if ( currentInTemp > maxTemp && currentOutTemp < maxTemp ) {
-		log.info "Outside is colder than the max of ${maxTemp}, and can be used to cool the house."
-
-		def alreadyNotified = recentEvents.count { it.doubleValue > currentOutTemp } > 1
-		if ( alreadyNotified ) {
-			log.debug "Already notified! No notifications sent."
-		} else {
-			if( currentOutTemp <= currentInTemp && !openWindows ) {
-				send( "Open some windows to cool down the house! Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
-			}
-			if( currentOutTemp > currentInTemp && openWindows ) {
-				send( "It's gotten warmer outside! You should close these windows: ${openWindows.join(', ')}. Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
-			}
-		}
-	// Otherwise, check against minimum temperature
-	} else if ( currentInTemp < minTemp && currentOutTemp > minTemp ) {
-		log.info "Outside is warmer than the minimum of ${minTemp}, and can be used to heat the house."
-		
-		def alreadyNotified = recentEvents.count { it.doubleValue < currentOutTemp } > 1
-		if ( alreadyNotified ) {
-			log.debug "Already notified! No notifications sent."
-		} else {
-			if( currentOutTemp > currentInTemp && !openWindows ) {
-				send( "Open some windows to warm up the house! Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
-			}
-			if( currentOutTemp < currentInTemp && openWindows ) {
-				send( "It's gotten colder outside! You should close these windows: ${openWindows.join(', ')}. Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
-			}
-		}
-	} else {
+	// Figure out if we should notify
+	if ( currentInTemp > minTemp && currentInTemp < maxTemp ) {
 		log.info "In comfort zone: $currentInTemp is between $minTemp and $maxTemp."
 		log.debug "No notifications sent."
+	} else if ( currentInTemp > maxTemp ) {
+		// Too warm. Can we do anything?
+
+		def alreadyNotified = recentEvents.count { it.doubleValue > currentOutTemp } > 1
+
+		if ( !alreadyNotified ) {
+			if ( currentOutTemp < maxTemp && !openWindows ) {
+				send( "Open some windows to cool down the house! Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
+			} else if ( currentOutTemp > maxTemp && openWindows ) {
+				send( "It's gotten warmer outside! You should close these windows: ${openWindows.join(', ')}. Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )				
+			} else {
+				log.debug "No notifications sent. Everything is in the right place."
+			}
+		} else {
+			log.debug "Already notified! No notifications sent."
+		}
+	} else if ( currentInTemp < minTemp ) {
+		// Too cold! Is it warmer outside?
+
+		def alreadyNotified = recentEvents.count { it.doubleValue < currentOutTemp } > 1
+
+		if ( !alreadyNotified ) {
+			if ( currentOutTemp > minTemp && !openWindows ) {
+				send( "Open some windows to warm up the house! Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
+			} else if ( currentOutTemp < minTemp && openWindows ) {
+				send( "It's gotten colder outside! You should close these windows: ${openWindows.join(', ')}. Currently ${currentInTemp}°F inside and ${currentOutTemp}°F outside." )
+			} else {
+				log.debug "No notifications sent. Everything is in the right place."
+			}
+		} else {
+			log.debug "Already notified! No notifications sent."
+		}
 	}
 }
 
@@ -139,6 +141,7 @@ private send(msg) {
 	if ( sendPushMessage != "No" ) {
 		log.debug( "sending push message" )
 		sendPush( msg )
+        sendEvent(linkText:app.label, descriptionText:msg, eventType:"SOLUTION_EVENT", displayed: true, name:"summary")
 	}
 
 	if ( phone1 ) {
